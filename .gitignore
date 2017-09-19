@@ -1,0 +1,28 @@
+# we ingnore all the file at first
+/*
+**
+# Reserve some general file
+!.gitignore
+!*.md
+!LICENSE*
+
+# For python and bash script
+!*.py
+!*.sh
+!*.pl
+!*.txt
+# Some generic scripts
+!/script
+!/myscript
+
+# our code: python and bash
+
+# our code: C++
+!/KMeans-GMM-HMM
+!*.cpp
+!*.cc
+!*.h
+!Makefile*
+!*Makefile*
+!*.imp
+
