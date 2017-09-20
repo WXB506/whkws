@@ -435,7 +435,7 @@ void CHMM::Train(const std::vector<infra::matrix> instances, bool tune_trans) {
 			seq.clear();
 		}
 		currL /= size;
-
+        std::cout << currL << std::endl;
 		// Reestimate GMM
 		int count = 0;
 		for ( i = 0; i < m_stateNum; i++) {

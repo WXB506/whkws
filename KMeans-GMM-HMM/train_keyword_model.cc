@@ -8,7 +8,7 @@
 #include "util.h"
 
 #define STATE_PER_PHONE 3
-#define MIX_NUM 1
+#define MIX_NUM 2
 using namespace std;
 
 void TrainCHGMM (aslp_std::Feature *querys, 
@@ -31,8 +31,9 @@ void TrainCHGMM (aslp_std::Feature *querys,
             exit(1);
         }
         CHMM *chmm = new CHMM(phone_num*STATE_PER_PHONE, instances[0].width(), MIX_NUM);
+        std::cout << it->first << std::endl;
         chmm->Train(instances, false); //here false means we don't tune the transition probs.
-        
+        std::cout << endl; 
         ofstream out(out_dir + it->first + ".mdl");
         out << *chmm;
         out.close();

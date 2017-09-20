@@ -1,0 +1,2 @@
+g++ -g -std=c++0x -Iinfra2 -I. -c test_keyword_model.cc
+Makefile:49: recipe for target 'test_keyword_model.o' failed
