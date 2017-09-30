@@ -16,6 +16,8 @@ History:
 #include "infra.h"
 #include "GMM.h"
 
+#define BIG_DOUBLE 2e100
+
 class CHMM
 {
 public:
@@ -52,6 +54,7 @@ public:
 	void Init(const char* sampleFileName);
 	double getTransProb(int i,int j);
 
+    void LengthNormalization();
 	friend std::ostream& operator<<(std::ostream& out, CHMM& hmm);
 	friend std::istream& operator>>(std::istream& in, CHMM& hmm);
     //将特征数据文本文件转化为二进制文件

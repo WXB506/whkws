@@ -105,9 +105,31 @@ double GMM::GetProbability(const double* x, int j)
 		p *= 1 / sqrt(2 * 3.14159 * m_vars[j][d]);
 		p *= exp(-0.5 * (x[d] - m_means[j][d]) * (x[d] - m_means[j][d]) / m_vars[j][d]);
 	}
+    if (p < 1e-300) {
+        return 1e-300;
+    }
 	return p;
 }
+/*double GMM::GetLogProbability(const double* sample ) {
+	double logp = 0;
 
+	for (int i = 0; i < m_mixNum; i++) {
+		logp += (log(m_priors[i]) * GetProbability(sample, i);
+	}
+	return p;
+    
+}
+double GMM:GetLogProbability(const double* x, int j) {
+    double logp = 0;
+	for (int d = 0; d < m_dimNum; d++) {
+        double p = 1;
+		p *= 1 / sqrt(2 * 3.14159 * m_vars[j][d]);
+		p *= exp(-0.5 * (x[d] - m_means[j][d]) * (x[d] - m_means[j][d]) / m_vars[j][d]);
+        logp += (log(p) -0.5 * (x[d] - m_means[j][d]) * (x[d] - m_means[j][d]) / m_vars[j][d]);
+    }
+    return logp;
+}
+*/
 void GMM::Train(const char* sampleFileName)
 {
 	//DumpSampleFile(sampleFileName);
@@ -272,7 +294,7 @@ void GMM::Train(double *data, int N)
 				}
 			}
 
-			currL += (p > 1E-20) ? log10(p) : -20;
+			currL += log(p);
 		}
 		currL /= size;
 
@@ -296,6 +318,9 @@ void GMM::Train(double *data, int N)
 		}
 
 		// Terminal conditions
+        if (m_mixNum==1) {
+            break;
+        }
 		iterNum++;
 		if (fabs(currL - lastL) < m_endError * fabs(lastL))
 		{
@@ -307,7 +332,7 @@ void GMM::Train(double *data, int N)
 		}
 
 		//--- Debug ---
-		//cout << "Iter: " << iterNum << ", Average Log-Probability: " << currL << endl;
+		cout << "Iter: " << iterNum << ", Average Log-Probability: " << currL << endl;
 	}
 	delete[] next_priors;
 	for (int i = 0; i < m_mixNum; i++)
@@ -504,6 +529,136 @@ void GMM::Init(const char* sampleFileName)
 
 	sampleFile.close();
 	labelFile.close();
+}
+
+void GMM::InitNoVariance(double *data, int N) {
+    if (N==0) {
+
+        std::cout << "wrong gmm training" << std::endl;
+    }
+	KMeans* kmeans = new KMeans(m_dimNum, m_mixNum);
+	kmeans->SetInitMode(KMeans::InitUniform);
+	int *Label;
+	Label=new int[N];
+	kmeans->Cluster(data,N,Label);
+
+	int* counts = new int[m_mixNum];
+    // Overall mean of training data
+	for (int i = 0; i < m_mixNum; i++) {
+		counts[i] = 0;
+		m_priors[i] = 0;
+		memcpy(m_means[i], kmeans->GetMean(i), sizeof(double) * m_dimNum);
+	}
+    int label = -1;
+    int size = N;
+	for (int i = 0; i < size; i++) {
+		label=Label[i];
+		// Count each Gaussian
+		counts[label]++;
+    }
+	// Initialize each Gaussian.
+	for (int i = 0; i < m_mixNum; i++) {
+		m_priors[i] = 1.0 * counts[i] / size;
+    }
+
+}
+
+void GMM::TrainNoVariance(double *data, int N)
+{
+	InitNoVariance(data, N);
+
+	int size = N;
+
+	// Reestimation
+	bool loop = true;
+	double iterNum = 0;
+	double lastL = 0;
+	double currL = 0;
+	int unchanged = 0;
+	double* x = new double[m_dimNum];	// Sample data
+	double* next_priors = new double[m_mixNum];
+	double** next_means = new double*[m_mixNum];
+
+	for (int i = 0; i < m_mixNum; i++) {
+		next_means[i] = new double[m_dimNum];
+	}
+
+	while (loop) {
+		// Clear buffer for reestimation
+		memset(next_priors, 0, sizeof(double) * m_mixNum);
+		for (int i = 0; i < m_mixNum; i++) {
+			memset(next_means[i], 0, sizeof(double) * m_dimNum);
+		}
+
+		lastL = currL;
+		currL = 0;
+
+		// Predict
+		for (int k = 0; k < size; k++) {
+			for(int j=0;j<m_dimNum;j++)
+				x[j]=data[k*m_dimNum+j];
+			double p = GetProbability(x);
+
+			for (int j = 0; j < m_mixNum; j++) {
+				double pj = GetProbability(x, j) * m_priors[j] / p;
+				next_priors[j] += pj;
+
+				for (int d = 0; d < m_dimNum; d++) {
+					next_means[j][d] += pj * x[d];
+				}
+			}
+
+			currL += log(p);
+		}
+		currL /= size;
+
+		// Reestimation: generate new priors, means and variances.
+		for (int j = 0; j < m_mixNum; j++) {
+			m_priors[j] = next_priors[j] / size;
+
+			if (m_priors[j] > 0) {
+				for (int d = 0; d < m_dimNum; d++) {
+					m_means[j][d] = next_means[j][d] / next_priors[j];
+				}
+			}
+		}
+
+		// Terminal conditions
+        if (m_mixNum==1) {
+            break;
+        }
+		iterNum++;
+		if (fabs(currL - lastL) < m_endError * fabs(lastL))
+		{
+			unchanged++;
+		}
+		if (iterNum >= m_maxIterNum || unchanged >= 3)
+		{
+			loop = false;
+		}
+		//--- Debug ---
+		cout << "Iter: " << iterNum << ", Average Log-Probability: " << currL << endl;
+	}
+	delete[] next_priors;
+	for (int i = 0; i < m_mixNum; i++)
+	{
+		delete[] next_means[i];
+	}
+	delete[] next_means;
+	delete[] x;
+}
+
+void GMM::LengthNormalization() {
+    for (int i = 0; i < m_mixNum; i++) {
+        double sum = 0;
+        for (int j = 0; j < m_dimNum; j++) {
+            sum += m_means[i][j] * m_means[i][j];
+        }
+        double mod = sqrt(sum);
+        for (int j = 0; j < m_dimNum; j++) {
+            m_means[i][j] /= mod;
+        }
+    }
 }
 
 void GMM::DumpSampleFile(const char* fileName)

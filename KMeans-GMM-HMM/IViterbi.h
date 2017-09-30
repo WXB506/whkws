@@ -15,5 +15,8 @@ float SegmentationByFillerReestimation(std::pair<int, int> &area);
 //local constraint (i,j) comes from {(i-1, j-1), (i, j-1)}
 float subsequence_DTW_c4(const infra::matrix &dist, infra::vector &area);
 
+//local constraint (i,j) comes from {(i-2, j-1)(i-1, j-1), (i, j-1)}
+float subsequence_DTW_c2(const infra::matrix &dist, infra::vector &area);
+
 float I_DTW(float epsilon, const infra::matrix &dist, infra::vector &area);
 

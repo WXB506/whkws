@@ -1,11 +1,8 @@
 #!/usr/bin/bash
 stage=1
 fea_type="sbnf1"
-if [ $fea_type = "sbnf1" ]; then
-    distance_type="cosine"
-    do_mvn=1;
-fi
-
+do_mvn=0;
+state_num_per_phone=9;
 feat_dir=/home/disk1/jyhou/feats/XiaoYing_STD
 phone_num_dict_file=info/keyword_phone_num.txt
 #for x in keywords_20_60 keywords_60_100 keywords_native; # keywords_native_95_100
@@ -13,7 +10,7 @@ for x in keywords_60_100; # keywords_native_95_100
 do
     for tempalte_num in 10;
     do
-        for random_num in 1;
+        for random_num in 5;
         do
             keyword_dir="$feat_dir/$x/"
             model_dir="$feat_dir/ht_${x}_${tempalte_num}_${random_num}/"
@@ -29,10 +26,10 @@ do
             fi
 
             if [ $stage -le 1 ]; then
-                echo "./KMeans-GMM-HMM/train_keyword_model $keyword_dir ${keyword_list_file} $phone_num_dict_file $fea_type $do_mvn $model_dir"
-                      ./KMeans-GMM-HMM/train_keyword_model $keyword_dir ${keyword_list_file} $phone_num_dict_file $fea_type $do_mvn $model_dir
+                echo "./KMeans-GMM-HMM/train_keyword_model $keyword_dir ${keyword_list_file} $phone_num_dict_file $fea_type $do_mvn $state_num_per_phone $model_dir"
+                      ./KMeans-GMM-HMM/train_keyword_model $keyword_dir ${keyword_list_file} $phone_num_dict_file $fea_type $do_mvn $state_num_per_phone $model_dir
             fi
-            find $average_dir -name *.mdl | sed -e "s:^${average_dir}::" -e "s:.mdl$::" | sort > "${keyword_list_dir}${model_list_basename}"
+            find ${model_dir} -name *.mdl | sed -e "s:^${model_dir}::" -e "s:.mdl$::" | sort > "${keyword_list_dir}${model_list_basename}"
 
         done
     done

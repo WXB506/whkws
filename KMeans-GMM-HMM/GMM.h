@@ -42,6 +42,11 @@ public:
 	void Init(double *data, int N);
 	void Train(double *data, int N);
 
+    void InitNoVariance(double *data, int N);
+    void TrainNoVariance(double *data, int N);
+
+    void LengthNormalization();
+
 	void DumpSampleFile(const char* fileName);
 
 	friend std::ostream& operator<<(std::ostream& out, GMM& gmm);

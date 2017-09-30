@@ -55,10 +55,17 @@ void ReadData(aslp_std::Feature* features, string feature_dir, StringVector &fea
     }
 }
 
+void NormalizeFeature(aslp_std::Feature* features, int feature_size) {
+    for (int i=0; i < feature_size; i++) {
+        features[i].DoNormalizeFeature();
+    }
+}
+
 void ReadModel(CHMM* models, string model_dir, StringVector &model_list, int model_num, string suffix) {
     for (int i=0; i < model_num; i++) {
         ifstream in(model_dir + model_list[i] + "." + suffix);
         in >> models[i];
+        models[i].LengthNormalization();
         in.close();
     }
 }
@@ -102,7 +109,7 @@ int main(int argc, char *argv[]) {
     if (do_mvn) {
         MVN(tests, test_size);
     }
-
+    NormalizeFeature(tests, test_size);    
     // score for one model
     for (int i = 0; i < model_num; i++) {
         string query_id = model_list[i];
