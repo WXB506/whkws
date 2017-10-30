@@ -8,11 +8,10 @@
 #include "feature.h"
 #include "util.h"
 
-#define MIX_NUM 1
 using namespace std;
 
 void TrainCHGMM (aslp_std::Feature *querys, 
-     std::map< std::string, std::vector<int> > &uniq_query_map, string out_dir) {
+     std::map< std::string, std::vector<int> > &uniq_query_map, int mix_num, string out_dir) {
     
     std::map<std::string, std::vector<int> >::iterator it;
     for (it=uniq_query_map.begin(); it != uniq_query_map.end(); it++) {
@@ -28,7 +27,7 @@ void TrainCHGMM (aslp_std::Feature *querys,
         int min_frame_num = *min_element(frame_nums.begin(), frame_nums.end());
         int state_num = (max_frame_num>min_frame_num*2) ? min_frame_num*2 : max_frame_num;
         state_num -= 1;
-        CHMM *chmm = new CHMM(state_num, instances[0].width(), MIX_NUM);
+        CHMM *chmm = new CHMM(state_num, instances[0].width(), mix_num);
         std::cout << it->first << std::endl;
         chmm->Train(instances, false); //here false means we don't tune the transition probs.
         std::cout << endl; 
@@ -41,7 +40,7 @@ void TrainCHGMM (aslp_std::Feature *querys,
 void TrainCHGMM (aslp_std::Feature *querys, 
      std::map< std::string, std::vector<int> > &uniq_query_map, 
      std::map< std::string, int > &phone_num_dict, 
-     int state_num_per_phone, string out_dir) {
+     int state_num_per_phone, int mix_num, string out_dir) {
    
     int phone_num=0; 
     std::map<std::string, int>::iterator it_phone_num; 
@@ -58,7 +57,7 @@ void TrainCHGMM (aslp_std::Feature *querys,
             std::cout << "can not file the phone num of keyword: " << it->first << std::endl;
             exit(1);
         }
-        CHMM *chmm = new CHMM(phone_num*state_num_per_phone, instances[0].width(), MIX_NUM);
+        CHMM *chmm = new CHMM(phone_num*state_num_per_phone, instances[0].width(), mix_num);
         std::cout << it->first << std::endl;
         chmm->Train(instances, false); //here false means we don't tune the transition probs.
         std::cout << endl; 
@@ -71,7 +70,7 @@ void TrainCHGMM (aslp_std::Feature *querys,
 void TrainCHGMM (aslp_std::Feature *querys, 
      std::map< std::string, std::vector<int> > &uniq_query_map, 
      std::map< std::string, int > &phone_num_dict, 
-     int state_num_per_phone, double *global_variance, string out_dir) {
+     int state_num_per_phone, int mix_num, double *global_variance, string out_dir) {
    
     int phone_num=0; 
     std::map<std::string, int>::iterator it_phone_num; 
@@ -85,10 +84,7 @@ void TrainCHGMM (aslp_std::Feature *querys,
             instances.push_back(querys[(it->second)[i]].GetFeature());
             frame_nums.push_back(querys[(it->second)[i]].GetFeature().height());
         }
-        int max_frame_num = *max_element(frame_nums.begin(), frame_nums.end()); 
         int min_frame_num = *min_element(frame_nums.begin(), frame_nums.end());
-        int state_num = (max_frame_num>min_frame_num*2) ? min_frame_num*2 : max_frame_num;
-        state_num -= 1;
         it_phone_num = phone_num_dict.find(it->first);
         if(it_phone_num != phone_num_dict.end()){
             phone_num = it_phone_num->second;
@@ -96,15 +92,22 @@ void TrainCHGMM (aslp_std::Feature *querys,
             std::cout << "can not file the phone num of keyword: " << it->first << std::endl;
             exit(1);
         }
-        state_num = phone_num * state_num_per_phone;
-        CHMM *chmm = new CHMM(state_num, instances[0].width(), MIX_NUM);
+        int state_num = phone_num * state_num_per_phone;
+        if (state_num >= min_frame_num*2) {
+            state_num = min_frame_num*2 -1;
+            std::cout << "info: min frame num less than the state num" << std::endl;
+        }
+        CHMM *chmm = new CHMM(state_num, instances[0].width(), mix_num);
         //set global variance
         for (i = 0; i < state_num; i++) {
-            for (j = 0; j < MIX_NUM; j++) {
+            for (j = 0; j < mix_num; j++) {
                 (chmm->GetStateModel(i))->setVariance(j, global_variance);
             }
         }
- 
+
+        if (it->first == "like") {
+            int asdfasd=1;
+        }
         std::cout << it->first << std::endl;
         chmm->Train(instances, false); //here false means we don't tune the transition probs.
         std::cout << endl; 
@@ -127,7 +130,7 @@ void GlobalVariance(aslp_std::Feature *features, int feature_size, double *globa
     }
     for (i = 0; i < feature_size; i++) {
         infra::matrix feature = features[i].GetFeature();
-        cout << feature.height() << " " << feature.width() << endl;;
+        //cout << feature.height() << " " << feature.width() << endl;;
         for (j = 0; j < feature.height(); j++) {
             for (k = 0; k < dim; k++) {
                 mean[k] += feature(j,k);
@@ -179,8 +182,8 @@ void build_phone_num_dict(std::string phone_num_dict_file, std::map< std::string
 }
 
 int main(int argc, char *argv[]) {    
-    if(argc < 7) {
-        cerr<<"USAGE: query_dir query_list_file phone_num_dict feature_type do_mvn state_num_per_phone result_dir" << endl;
+    if(argc < 9) {
+        cerr<<"USAGE: query_dir query_list_file phone_num_dict feature_type do_mvn state_num_per_phone mix_num result_dir" << endl;
         return EXIT_FAILURE;
     }
     
@@ -191,6 +194,7 @@ int main(int argc, char *argv[]) {
     std::string phone_num_dict_file;
     int do_mvn;
     int state_num_per_phone;
+    int mix_num;
 
     query_dir = string(argv[1]);
     query_list_file = string(argv[2]);
@@ -198,7 +202,8 @@ int main(int argc, char *argv[]) {
     feature_type = string(argv[4]);
     do_mvn = atoi(argv[5]);
     state_num_per_phone = atoi(argv[6]);
-    out_dir = string(argv[7]);
+    mix_num = atoi(argv[7]);
+    out_dir = string(argv[8]);
 
     StringVector query_list;
     query_list.read(query_list_file);
@@ -209,9 +214,6 @@ int main(int argc, char *argv[]) {
     aslp_std::Feature* querys = new aslp_std::Feature[query_size];
     
     ReadData(querys, query_dir, query_list, query_size, feature_type);
-    if (do_mvn) {
-        MVN(querys, query_size);
-    }
     NormalizeFeature(querys, query_size);    
     std::vector<std::string> query_id_splits;
     std::map< std::string, std::vector<int> > uniq_query_map;
@@ -238,7 +240,7 @@ int main(int argc, char *argv[]) {
 //    for (int i = 0; i< dim; i++) {
 //      global_variance[i] = 1;
 //    }      
-    TrainCHGMM(querys, uniq_query_map, phone_num_dict, state_num_per_phone, global_variance, out_dir);    
+    TrainCHGMM(querys, uniq_query_map, phone_num_dict, state_num_per_phone, mix_num, global_variance, out_dir);
     
     delete [] querys;
     return EXIT_SUCCESS;

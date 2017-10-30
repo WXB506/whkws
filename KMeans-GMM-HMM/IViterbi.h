@@ -6,7 +6,7 @@
 #include "infra.h"
 
 #define BIG_FLT 9999999
-#define MAX_ITERATION 10  
+#define MAX_ITERATION 3 
 
 float VertibeDecode(infra::vector init_p, infra::matrix A, infra::matrix acoustic_cost, std::pair<int, int> &area);
 

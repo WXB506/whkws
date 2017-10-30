@@ -22,7 +22,7 @@ GMM::GMM(int dimNum, int mixNum)
 	m_dimNum = dimNum;
 	m_mixNum = mixNum;
 
-	m_maxIterNum = 100;
+	m_maxIterNum = 50;
 	m_endError = 0.001;
 
 	Allocate();
@@ -332,7 +332,7 @@ void GMM::Train(double *data, int N)
 		}
 
 		//--- Debug ---
-		cout << "Iter: " << iterNum << ", Average Log-Probability: " << currL << endl;
+		//cout << "Iter: " << iterNum << ", Average Log-Probability: " << currL << endl;
 	}
 	delete[] next_priors;
 	for (int i = 0; i < m_mixNum; i++)
@@ -637,7 +637,7 @@ void GMM::TrainNoVariance(double *data, int N)
 			loop = false;
 		}
 		//--- Debug ---
-		cout << "Iter: " << iterNum << ", Average Log-Probability: " << currL << endl;
+		//cout << "Iter: " << iterNum << ", Average Log-Probability: " << currL << endl;
 	}
 	delete[] next_priors;
 	for (int i = 0; i < m_mixNum; i++)

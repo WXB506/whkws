@@ -1,6 +1,6 @@
 
 # headers:
-ver    =debug
+ver    = debug
 
 HDRS    = infra.h \
     IViterbi.h \

@@ -348,8 +348,9 @@ void CHMM::Init(const std::vector<infra::matrix> instances) {
             if((j == i)) {
                 m_stateTran[i][j] = 0.4;
             }
-            if((j == i+1)||( j == i+2))
+            if((j == i+1 || j == i+2)){
                 m_stateTran[i][j] = 0.3;
+            }
         }
     }
     m_stateTran[m_stateNum-1][m_stateNum]=1;    
@@ -378,7 +379,7 @@ void CHMM::Init(const std::vector<infra::matrix> instances) {
               single_gmm_data[j*dim +k] = gaussseq[i][j][k]; 
             }
         } 
-        m_stateModel[i]->Train(single_gmm_data, seq_size);
+        m_stateModel[i]->TrainNoVariance(single_gmm_data, seq_size);
         if (seq_size < 1) {
             std::cout << "wrong number of seq to train GMM" << std::endl;
         }
@@ -465,7 +466,7 @@ void CHMM::Train(const std::vector<infra::matrix> instances, bool tune_trans) {
             } 
             if (seq_size > m_stateModel[i]->GetMixNum() * 2) {
                 //m_stateModel[j]->DumpSampleFile(stateFileName[j]);
-                m_stateModel[i]->Train(single_gmm_data, seq_size);
+                m_stateModel[i]->TrainNoVariance(single_gmm_data, seq_size);
             }
             count += stateInitNum[i];
             gaussseq[i].clear();

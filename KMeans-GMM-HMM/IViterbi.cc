@@ -83,7 +83,7 @@ float subsequence_DTW_c4(const infra::matrix &dist, infra::vector &area){
     infra::matrix length(height, width);
     infra::matrix path(height, width);
     infra::matrix s_point(height, width);
-    if (height > width) {
+    if (height >= width) {
         area(0)=0;
         area(1)=1;
         return 200;
@@ -175,9 +175,9 @@ float I_DTW(float epsilon, const infra::matrix &dist, infra::vector &area) {
             break;
         }*/
         counter++;
-        if (counter > MAX_ITERATION) {
-            std::cout << "exceed maximum iterations: " << counter << std::endl;
-            std::cout << "precision: " << best_epsilon - epsilon << std::endl;
+        if (counter >= MAX_ITERATION) {
+            //std::cout << "exceed maximum iterations: " << counter << std::endl;
+            //std::cout << "precision: " << best_epsilon - epsilon << std::endl;
             break;
         }
     }
